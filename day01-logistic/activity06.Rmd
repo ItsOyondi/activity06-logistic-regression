@@ -6,3 +6,103 @@ output: github_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+```{r load_packages}
+library(tidyverse)
+library(tidymodels)
+library(ggplot2)
+```
+
+## Loading Data
+Link to data: [Resume](https://www.openintro.org/data/csv/resume.csv)
+
+```{r}
+resume = read.csv("https://www.openintro.org/data/csv/resume.csv")
+resume
+
+```
+1.  Is this an observational study or an experiment? Explain. 
+__Experimental study because, the researchers focus on establishing the couse and effect relationship between dependent and independent variables.__
+
+2.  The variable of interest is `received_callback`. What type of
+    variable is this? What do the values represent? 
+    __Categorical variable, the values represent whether candidates were called after their resumes were received or not.__
+
+3.  For `received_callback`, create an appropriate data visualization
+    using `{ggplot2}`. Be sure to provide more descriptive labels (both
+    axes labels and value labels - there are many ways to do this) as
+    well as an appropriate title.
+```{r received_callback_viz}
+ggplot(resume, aes(x = received_callback)) +
+  geom_bar() +
+  labs(x = "Received Callback", y = "Count of callbacks") +
+  scale_x_discrete(labels = c("No", "Yes"), breaks = c(0, 1))
+```
+    
+    
+    
+
+4.  Below, I provide you with a numerical summary table that should
+    reiterate (i.e., provides numerical values) your plot in (3). Write
+    the code to produce this table.
+
+| received_callback |    n | percent |
+|:------------------|-----:|--------:|
+| No                | 4478 |   91.95 |
+| Yes               |  392 |    8.05 |
+
+
+```{r group_data}
+grouped_data <- resume %>%
+  group_by(received_callback = ifelse(received_callback == 1, "Yes", "No")) %>%
+  summarise(count = n()) %>%
+  mutate(percent = round(count / sum(count) * 100, 2))
+
+grouped_data
+```
+
+5.  Using the output from (4) and (5), what do you notice?
+__The number call backs not received is significantly higher than received call backs__
+
+Using your output from (4) and (5), answer the following questions:
+
+6.  What is the probability that a randomly selected résumé/person will
+    be called back? Approximately 8%
+
+7.  What are the [**odds**](https://en.wikipedia.org/wiki/Odds) that a
+    randomly selected résumé/person will be called back?
+    __8% or 0.8__
+    
+| received_callback | Black        | White        |
+|:------------------|:-------------|:-------------|
+| No                | 93.55 (2278) | 90.35 (2200) |
+| Yes               | 6.45 (157)   | 9.65 (235)   |
+
+Using the above table, answer the following question:
+
+6.  What is the probability that a randomly selected résumé/person
+    perceived as Black will be called back?
+    __~6%__
+
+7.  What are the **odds** that a randomly selected résumé/person
+    perceived as Black will be called back?
+    __~6%__
+    
+    
+```{r model}
+# The {tidymodels} method for logistic regression requires that the response be a factor variable
+resume <- resume %>% 
+  mutate(received_callback = as.factor(received_callback))
+
+resume_mod <- logistic_reg() %>%
+  set_engine("glm") %>%
+  fit(received_callback ~ race, data = resume, family = "binomial")
+
+tidy(resume_mod) %>% 
+  knitr::kable(digits = 3)
+```
+    
+    
+
+
+
+
